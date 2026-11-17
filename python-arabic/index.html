@@ -644,6 +644,10 @@ html.app .side-search{padding-bottom:6px}
 .upd-pct{font-size:14px;color:var(--muted);text-align:center}
 @keyframes fadeIn{from{opacity:0}}
 @keyframes upIn{from{transform:translateY(40px);opacity:0}}
+
+/* app version badge (Android app only) */
+.app-ver{flex:none;height:40px;padding:0 12px;border:0;border-radius:14px;background:var(--surface);color:var(--muted);box-shadow:var(--shadow);font:600 13px "JetBrains Mono",monospace;direction:ltr;cursor:pointer}
+.app-ver:active{transform:scale(.96)}
 </style>
 </head>
 <body>
@@ -654,6 +658,7 @@ html.app .side-search{padding-bottom:6px}
   <div class="hdr-progress" title="الدروس المكتملة"><span>التقدّم</span><span id="progText" dir="ltr">0/0</span><div class="pbar"><i id="progBar"></i></div></div>
   <div id="status" class="status" data-state="loading" role="status" aria-live="polite"><span class="dot"></span><span class="st-text">جارٍ تحميل بايثون…</span></div>
   <button id="themeBtn" class="icon-btn" type="button" aria-label="تبديل الوضع الليلي">◐</button>
+  <button id="appVer" class="app-ver" type="button" hidden aria-label="إصدار التطبيق — اضغط للبحث عن تحديث"></button>
 </header>
 <div class="layout">
   <aside id="sidebar" aria-label="قائمة الدروس">
@@ -6914,6 +6919,22 @@ def __run_user(code, check=None):
     return { shown: true, current, latest: rel.version };
   }
   window.omniCheckUpdate = checkForUpdate;   // للاختبار اليدوي
+  if (IS_NATIVE) {
+    (async () => {
+      try {
+        const info = await window.Capacitor.Plugins.App.getInfo();
+        const b = $('#appVer');
+        b.textContent = 'v' + info.version; b.hidden = false;
+        b.addEventListener('click', async () => {
+          if (!navigator.onLine) { toast('أنت الآن على الإصدار ' + info.version + ' — اتصل بالإنترنت للبحث عن تحديث'); return; }
+          toast('🔍 جارٍ البحث عن تحديث…');
+          const r = await checkForUpdate({ force: true });
+          if (r && r.upToDate) toast('✅ أنت على آخر إصدار (' + info.version + ')');
+          else if (!r) toast('تعذّر البحث عن تحديث الآن — حاول لاحقًا');
+        });
+      } catch (e) { }
+    })();
+  }
   if (IS_NATIVE) setTimeout(() => checkForUpdate().catch(() => { }), 3500);
 
   // زر الرجوع في أندرويد (يعمل فقط داخل تطبيق Capacitor)
