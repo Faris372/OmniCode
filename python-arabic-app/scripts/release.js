@@ -41,8 +41,11 @@ fs.mkdirSync(path.join(APP, 'dist'), { recursive: true });
 const apk = path.join(APP, 'dist', `OmniCode-${version}.apk`);
 fs.copyFileSync(apkSrc, apk);
 console.log('APK:', apk, (fs.statSync(apk).size / 1048576).toFixed(1) + ' MB');
+// نسخة باسم ثابت: رابط releases/latest/download/OmniCode.apk يشير دائمًا لأحدث إصدار (يُستخدم في QR)
+const apkFixed = path.join(APP, 'dist', 'OmniCode.apk');
+fs.copyFileSync(apk, apkFixed);
 
 // 3) GitHub release (the app checks /releases/latest for a newer tag)
-run(GH, ['release', 'create', 'v' + version, apk, '--repo', cfg.repo, '--title', `OmniCode ${version}`, '--notes-file', notesFile, '--latest']);
+run(GH, ['release', 'create', 'v' + version, apk, apkFixed, '--repo', cfg.repo, '--title', `OmniCode ${version}`, '--notes-file', notesFile, '--latest']);
 console.log(`✅ نُشر الإصدار ${version} — سيظهر إشعار التحديث لكل المستخدمين.`);
 console.log('تذكير: احفظ تعديل رقم الإصدار في git:  git commit -am "Release ' + version + '" && git push');
