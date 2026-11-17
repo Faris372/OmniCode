@@ -1,0 +1,24 @@
+{
+  "name": "python-bilarabi-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Python bil-Arabi — Android app (Capacitor)",
+  "scripts": {
+    "copy-web": "node scripts/build-web.js",
+    "sync": "npm run copy-web && npx cap sync android",
+    "open": "npx cap open android",
+    "assets": "npx capacitor-assets generate --android",
+    "apk": "npm run sync && cd android && gradlew.bat assembleDebug",
+    "fetch-vendor": "node scripts/fetch-vendor.js",
+    "release": "node scripts/release.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2"
+  }
+}

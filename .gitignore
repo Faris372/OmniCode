@@ -1,0 +1,30 @@
+# OmniCode repository: only the website and the Android app are tracked.
+
+# other things in this folder
+/first try/
+/.claude/
+/*.png
+/*.svg
+/*.jpg
+
+# Android app — generated / downloaded files (recreated by the scripts)
+python-arabic-app/node_modules/
+python-arabic-app/vendor-cache/
+python-arabic-app/www/
+python-arabic-app/dist/
+python-arabic-app/*.apk
+python-arabic-app/.claude/
+python-arabic-app/android/.gradle/
+python-arabic-app/android/build/
+python-arabic-app/android/app/build/
+python-arabic-app/android/capacitor-cordova-android-plugins/build/
+python-arabic-app/android/app/src/main/assets/public/
+python-arabic-app/android/local.properties
+
+# signing keys must never be uploaded
+*.keystore
+*.jks
+
+# OS / editor
+.DS_Store
+Thumbs.db
