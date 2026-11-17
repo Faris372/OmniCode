@@ -638,6 +638,10 @@ html.app .side-search{padding-bottom:6px}
 .upd-act button{flex:1;min-height:48px;border-radius:14px;border:0;font:700 16px "IBM Plex Sans Arabic",sans-serif}
 .upd-act .go{background:#5b5bd6;color:#fff}
 .upd-act .later{background:var(--surface-2);color:var(--text)}
+.upd-prog{flex:1;display:flex;flex-direction:column;gap:8px}
+.upd-bar{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.upd-bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#7c7cf0,#4343b8);transition:width .2s}
+.upd-pct{font-size:14px;color:var(--muted);text-align:center}
 @keyframes fadeIn{from{opacity:0}}
 @keyframes upIn{from{transform:translateY(40px);opacity:0}}
 </style>
@@ -6836,14 +6840,57 @@ def __run_user(code, check=None):
     $('.upd-notes', back).textContent = (rel.notes || 'تحسينات وإصلاحات.').trim().slice(0, 1200);
     $('.upd-notes', back).dir = 'auto';
     document.body.append(back);
-    $('.go', back).addEventListener('click', () => {
-      // رابط خارجي: Capacitor يفتحه في متصفح الجوال، فيبدأ تنزيل ملف APK
-      window.location.href = rel.url;
-      back.remove();
-      toast('بعد اكتمال التنزيل افتح الملف واضغط «تحديث»');
-    });
+    $('.go', back).addEventListener('click', () => installUpdate(rel, back));
     $('.later', back).addEventListener('click', () => { state.updLater = { v: rel.version, until: Date.now() + 24 * 3600 * 1000 }; saveNow(); back.remove(); });
   }
+  // تنزيل التحديث داخل التطبيق ثم فتح شاشة التثبيت مباشرة (بدون متصفح أو GitHub)
+  async function installUpdate(rel, back) {
+    const U = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppUpdater;
+    if (!U || !/\.apk$/i.test(rel.url)) {            // نسخ قديمة من التطبيق: نفتح الرابط في المتصفح
+      window.location.href = rel.url; back.remove();
+      toast('بعد اكتمال التنزيل افتح الملف واضغط «تحديث»');
+      return;
+    }
+    const act = $('.upd-act', back), notes = $('.upd-notes', back);
+    act.innerHTML = '<div class="upd-prog"><div class="upd-bar"><i></i></div><span class="upd-pct">جارٍ التنزيل… 0%</span></div>';
+    const bar = $('.upd-bar i', back), pct = $('.upd-pct', back);
+    let sub = null;
+    try {
+      sub = await U.addListener('progress', p => {
+        const r = p.total > 0 ? p.loaded / p.total : 0;
+        bar.style.width = Math.round(r * 100) + '%';
+        pct.textContent = 'جارٍ التنزيل… ' + (p.total > 0 ? Math.round(r * 100) + '%' : (p.loaded / 1048576).toFixed(1) + ' ميجابايت');
+      });
+      await U.download({ url: rel.url });
+    } catch (e) {
+      if (sub) sub.remove();
+      act.innerHTML = '<button type="button" class="go">🔄 إعادة المحاولة</button><button type="button" class="later">لاحقًا</button>';
+      notes.textContent = 'تعذّر تنزيل التحديث — تحقق من اتصالك بالإنترنت ثم أعد المحاولة.';
+      $('.go', back).addEventListener('click', () => installUpdate(rel, back));
+      $('.later', back).addEventListener('click', () => back.remove());
+      return;
+    }
+    if (sub) sub.remove();
+    bar.style.width = '100%'; pct.textContent = '✅ اكتمل التنزيل';
+    const openInstaller = async () => {
+      const ok = (await U.canInstall()).value;
+      if (ok) { await U.install(); back.remove(); return; }
+      // أول مرة فقط: أندرويد يطلب السماح للتطبيق بتثبيت التحديثات
+      notes.textContent = 'خطوة أخيرة (مرة واحدة فقط): اسمح لـ OmniCode بتثبيت التحديثات.\nاضغط «فتح الإعدادات»، فعّل «السماح من هذا المصدر»، ثم ارجع للتطبيق وسيبدأ التثبيت تلقائيًا.';
+      act.innerHTML = '<button type="button" class="go">⚙️ فتح الإعدادات</button><button type="button" class="later">لاحقًا</button>';
+      $('.later', back).addEventListener('click', () => back.remove());
+      $('.go', back).addEventListener('click', async () => {
+        await U.openInstallSettings();
+        const CA = window.Capacitor.Plugins.App;
+        const h = await CA.addListener('resume', async () => {
+          h.remove();
+          if ((await U.canInstall()).value) { await U.install(); back.remove(); }
+        });
+      });
+    };
+    await openInstaller();
+  }
+
   async function checkForUpdate(opts) {
     opts = opts || {};
     const Cap = window.Capacitor;
