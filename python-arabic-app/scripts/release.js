@@ -1,6 +1,7 @@
 // ينشر تحديثًا جديدًا للتطبيق على GitHub Releases
-// الاستخدام:  npm run release -- <رقم الإصدار> "ملاحظات التحديث"
-//   مثال:     npm run release -- 1.5 "دروس جديدة وإصلاحات"
+// الاستخدام:
+//   1) اكتب ملاحظات التحديث في الملف release-notes.md (تظهر للمستخدمين في نافذة التحديث)
+//   2) npm run release -- <رقم الإصدار>        مثال:  npm run release -- 1.5
 // الخطوات: يرفع versionName/versionCode ← يبني www وملف APK ← ينشئ Release على GitHub ويرفع الملف.
 const fs = require('fs');
 const path = require('path');
@@ -8,12 +9,17 @@ const { execFileSync } = require('child_process');
 
 const APP = path.join(__dirname, '..');
 const cfg = JSON.parse(fs.readFileSync(path.join(APP, 'release.config.json'), 'utf8'));
-const [version, notesArg] = process.argv.slice(2);
+const [version] = process.argv.slice(2);
 if (!version || !/^\d+(\.\d+){1,2}$/.test(version)) {
-  console.error('اكتب رقم الإصدار، مثل:  npm run release -- 1.5 "ما الجديد"');
+  console.error('اكتب رقم الإصدار، مثل:  npm run release -- 1.5   (والملاحظات في release-notes.md)');
   process.exit(1);
 }
-const notes = notesArg || 'تحسينات وإصلاحات.';
+// الملاحظات تُقرأ من ملف (تمرير نص متعدد الأسطر عبر npm في ويندوز يقطعه عند أول سطر)
+const notesFile = path.join(APP, 'release-notes.md');
+if (!fs.existsSync(notesFile) || !fs.readFileSync(notesFile, 'utf8').trim()) {
+  console.error('اكتب ملاحظات التحديث أولًا في الملف release-notes.md');
+  process.exit(1);
+}
 const GH = process.platform === 'win32' && fs.existsSync('C:/Program Files/GitHub CLI/gh.exe') ? 'C:/Program Files/GitHub CLI/gh.exe' : 'gh';
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, Object.assign({ stdio: 'inherit', cwd: APP, shell: process.platform === 'win32' && !/\.exe$/i.test(cmd) }, opts));
 
@@ -37,6 +43,6 @@ fs.copyFileSync(apkSrc, apk);
 console.log('APK:', apk, (fs.statSync(apk).size / 1048576).toFixed(1) + ' MB');
 
 // 3) GitHub release (the app checks /releases/latest for a newer tag)
-run(GH, ['release', 'create', 'v' + version, apk, '--repo', cfg.repo, '--title', `OmniCode ${version}`, '--notes', notes, '--latest']);
+run(GH, ['release', 'create', 'v' + version, apk, '--repo', cfg.repo, '--title', `OmniCode ${version}`, '--notes-file', notesFile, '--latest']);
 console.log(`✅ نُشر الإصدار ${version} — سيظهر إشعار التحديث لكل المستخدمين.`);
 console.log('تذكير: احفظ تعديل رقم الإصدار في git:  git commit -am "Release ' + version + '" && git push');

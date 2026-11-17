@@ -27,7 +27,8 @@ Learn programming in Arabic — Python and Java, from zero.
 
 ```bash
 npm run fetch-vendor        # مرة واحدة فقط على أي جهاز جديد
-npm run release -- 1.5 "ما الجديد في هذا الإصدار"
+# اكتب ما الجديد في الملف release-notes.md، ثم:
+npm run release -- 1.5
 ```
 
 الأمر يرفع رقم الإصدار، ويبني ملف APK، وينشره كـ Release على GitHub.
