@@ -46,7 +46,11 @@ fs.cpSync(path.join(CACHE, 'codemirror'), path.join(WWW, 'vendor', 'codemirror')
 fs.cpSync(path.join(CACHE, 'fonts'), path.join(WWW, 'vendor', 'fonts'), { recursive: true });
 // الأيقونات وملف manifest (المشار إليهما في الصفحة). ملف sw.js لا يُنسخ: التطبيق لا يحتاجه
 const SITE = path.dirname(SRC);
-if (fs.existsSync(path.join(SITE, 'java'))) fs.cpSync(path.join(SITE, 'java'), path.join(WWW, 'java'), { recursive: true });
+// محركا جافا و سي++ (ملفات WebAssembly الكبيرة موجودة داخل مجلد الموقع نفسه)
+for (const eng of ['java', 'cpp']) {
+  if (!fs.existsSync(path.join(SITE, eng, 'worker.js'))) throw new Error('missing engine folder: ' + eng);
+  fs.cpSync(path.join(SITE, eng), path.join(WWW, eng), { recursive: true });
+}
 if (fs.existsSync(path.join(SITE, 'icons'))) fs.cpSync(path.join(SITE, 'icons'), path.join(WWW, 'icons'), { recursive: true });
 if (fs.existsSync(path.join(SITE, 'manifest.webmanifest'))) fs.copyFileSync(path.join(SITE, 'manifest.webmanifest'), path.join(WWW, 'manifest.webmanifest'));
 console.log('www/ built (offline, no remote URLs)');

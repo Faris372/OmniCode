@@ -1,10 +1,11 @@
 /* OmniCode — Service Worker: يجعل الموقع يعمل بدون إنترنت بعد أول فتح
    - صفحات وملفات الموقع الصغيرة: الشبكة أولًا (لتصل التحديثات) ثم النسخة المحفوظة عند انقطاع الإنترنت
    - المحرر والخطوط: من الذاكرة أولًا
-   - ملفات بايثون (Pyodide/NumPy/Pandas) ومحرك جافا الكبيرة: ذاكرة مستقلة لا تُحذف عند تحديث الموقع */
-const SHELL = 'omni-shell-v3';          // غيّر الرقم عند تحديث المحرر أو الخطوط
+   - ملفات بايثون (Pyodide/NumPy/Pandas) ومحركي جافا و سي++ الكبيرة: ذاكرة مستقلة لا تُحذف عند تحديث الموقع */
+const SHELL = 'omni-shell-v4';          // غيّر الرقم عند تحديث المحرر أو الخطوط
 const LIBS = 'pyar-pyodide-0.26.4';     // يتغير فقط إذا تغيّر إصدار Pyodide
 const JAVA = 'omni-java-teavm-2025-06'; // يتغير فقط إذا تغيّرت ملفات محرك جافا الكبيرة
+const CPP = 'omni-cpp-clang8-2026-11';  // يتغير فقط إذا تغيّرت ملفات محرك سي++ الكبيرة (clang و wasm-ld)
 const PYO = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
 const CM = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/';
 const FONTS = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap';
@@ -20,7 +21,9 @@ const LIB_FILES = ['pyodide.js', 'pyodide.asm.js', 'pyodide.asm.wasm', 'python_s
 const CACHEABLE_HOSTS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 const isJavaBinary = url => /\/java\/[^?]+\.(wasm|bin)(\?|$)/.test(url);
-const cacheFor = url => url.startsWith(PYO) ? LIBS : (isJavaBinary(url) ? JAVA : SHELL);
+const isCppBinary = url => /\/cpp\/[^?]+\.(wasm|tar)(\?|$)/.test(url);
+const isBinary = url => isJavaBinary(url) || isCppBinary(url);
+const cacheFor = url => url.startsWith(PYO) ? LIBS : (isJavaBinary(url) ? JAVA : (isCppBinary(url) ? CPP : SHELL));
 
 async function save(url, { force = false } = {}) {
   const cache = await caches.open(cacheFor(url));
@@ -51,7 +54,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    const keep = [SHELL, LIBS, JAVA];
+    const keep = [SHELL, LIBS, JAVA, CPP];
     const keys = await caches.keys();
     // ننقل الملفات المحفوظة من النسخة القديمة (pyar-shell-*) حتى لا تضيع عند التحديث وأنت بدون إنترنت
     for (const k of keys.filter(k => !keep.includes(k))) {
@@ -74,8 +77,8 @@ self.addEventListener('fetch', event => {
   const sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !CACHEABLE_HOSTS.includes(url.hostname)) return;
 
-  // صفحات وملفات الموقع الصغيرة (ومنها java/worker.js): الشبكة أولًا، ثم المحفوظ عند انقطاع الإنترنت
-  if (sameOrigin && !isJavaBinary(req.url)) {
+  // صفحات وملفات الموقع الصغيرة (ومنها java/worker.js و cpp/worker.js): الشبكة أولًا، ثم المحفوظ عند انقطاع الإنترنت
+  if (sameOrigin && !isBinary(req.url)) {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL);
       const key = req.mode === 'navigate' ? './' : req.url.split('?')[0];
@@ -90,9 +93,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ملفات محرك جافا الكبيرة والمكتبات الخارجية: الذاكرة المحفوظة أولًا
+  // ملفات محركي جافا و سي++ الكبيرة والمكتبات الخارجية: الذاكرة المحفوظة أولًا
   event.respondWith((async () => {
-    const key = isJavaBinary(req.url) ? req.url.split('?')[0] : req.url;
+    const key = isBinary(req.url) ? req.url.split('?')[0] : req.url;
     const hit = await caches.match(key, { ignoreVary: true });
     if (hit) return hit;
     const res = await fetch(req);
