@@ -1,25 +1,44 @@
 # OmniCode
 
-**تعلّم البرمجة بالعربي — بايثون و جافا من الصفر.**
-Learn programming in Arabic — Python and Java, from zero.
+**تعلّم البرمجة بالعربي — بايثون و جافا و سي++ من الصفر.**
+Learn programming in Arabic — Python, Java and C++, from zero.
 
 - 🌐 الموقع: https://omniarab.netlify.app
 - 📱 تطبيق أندرويد: حمّل آخر نسخة من صفحة [Releases](../../releases/latest) (ملف `.apk`)
 
 ## ما فيه
 
-- **بايثون**: 34 درسًا في الأساسيات + NumPy + Pandas
-- **جافا**: 19 درسًا في الأساسيات
-- **تمارين وتحديات**: أسئلة سريعة و«اصطد الخطأ» وتحديات كتابة كود — 6 مستويات لكل لغة
-- كل الأكواد تعمل **داخل المتصفح أو التطبيق** — بدون تثبيت، وبدون إنترنت بعد أول تنزيل
-  (بايثون عبر [Pyodide](https://pyodide.org)، وجافا عبر [TeaVM javac](https://github.com/konsoletyper/teavm-javac))
+| اللغة | الدروس | التمارين |
+|---|---|---|
+| 🐍 **بايثون** | 44 درسًا: الأساسيات + NumPy + Pandas | 6 مستويات |
+| ☕ **جافا** | 46 درسًا: الأساسيات + الدوال + البرمجة الكائنية (OOP) + إدخال المستخدم + التواريخ | 9 مستويات |
+| 🔷 **سي++** | 43 درسًا: الأساسيات + المؤشرات وإدارة الذاكرة + الدوال ولامدا + الكلاسات والوراثة والقوالب | 6 مستويات |
+
+- **تحديات وتمارين** في كل درس: أسئلة سريعة و«اصطد الخطأ» وتحديات كتابة كود، تُصحَّح تلقائيًا
+- **أخطاء مفهومة**: كل رسالة خطأ تُشرح بالعربي مع رقم السطر
+- **إدخال المستخدم** (`input` و `Scanner` و `cin`) يعمل بنافذة صغيرة تطلب القيمة
+- كل الأكواد تعمل **داخل المتصفح أو التطبيق** — بدون تثبيت، وبدون إنترنت بعد أول تنزيل:
+  - بايثون عبر [Pyodide](https://pyodide.org)
+  - جافا عبر [TeaVM javac](https://github.com/konsoletyper/teavm-javac)
+  - سي++ عبر Clang و wasm-ld مترجمَين إلى WebAssembly ([wasm-clang](https://github.com/binji/wasm-clang)، رخصة Apache-2.0)
 
 ## المجلدات
 
 | المجلد | المحتوى |
 |---|---|
-| `python-arabic/` | الموقع (صفحة واحدة `index.html` + محرك جافا + Service Worker) — يُرفع كما هو على Netlify |
+| `python-arabic/` | الموقع (صفحة واحدة `index.html` + محرك جافا `java/` + محرك سي++ `cpp/` + Service Worker) — يُرفع كما هو على Netlify |
 | `python-arabic-app/` | تطبيق أندرويد (Capacitor) يغلّف نفس الموقع ويعمل بدون إنترنت |
+
+## المتطلبات
+
+- **سي++**: أي متصفح حديث يدعم WebAssembly (يعمل حتى على WebView قديم)
+- **بايثون**: Chrome / Android System WebView 85 أو أحدث
+- **جافا**: Chrome 119+، Firefox 120+، Safari 18.2+ (يحتاج WebAssembly GC)
+
+## اختبار الدروس آليًا
+
+الملف `python-arabic-app/scripts/lesson-test-runner.js` يشغّل كل الأمثلة، ويتأكد أن حل كل تحدٍّ ينجح وأن الكود الابتدائي يفشل.
+الصقه في Console الموقع (أو التطبيق عبر أدوات المطوّر) ثم: `await __omniTest('cpp')`
 
 ## نشر تحديث للتطبيق
 
@@ -28,7 +47,7 @@ Learn programming in Arabic — Python and Java, from zero.
 ```bash
 npm run fetch-vendor        # مرة واحدة فقط على أي جهاز جديد
 # اكتب ما الجديد في الملف release-notes.md، ثم:
-npm run release -- 1.5
+npm run release -- 1.8
 ```
 
 الأمر يرفع رقم الإصدار، ويبني ملف APK، وينشره كـ Release على GitHub.
